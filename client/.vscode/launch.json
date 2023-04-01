@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "GDB debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${config:PROJECT_CONFIG.EXECUTABLE}",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "MIMode": "gdb",
+            "targetArchitecture": "arm64",
+            "preLaunchTask": "rpi-deploy-gdb",
+            "setupCommands": [
+                {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ],
+        "miDebuggerPath": "/usr/bin/gdb-multiarch",
+        "miDebuggerServerAddress": "${config:PROJECT_CONFIG.TARGET_IP}:3000",
+        }
+    ]
+}

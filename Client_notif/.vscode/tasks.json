@@ -1,0 +1,49 @@
+{
+    "version": "2.0.0",
+    /* Yocto SDK configuration constants from settings.json */
+    "options": {
+        "env": {
+            "CXX": "${config:PROJECT_CONFIG.CXX}",         /* Used by Makefile */
+            "CC": "${config:PROJECT_CONFIG.CC}",           /* Used by Makefile */
+        }
+     },
+     /* Configure integrated Terminal */
+     "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+    },
+    "tasks": [
+        /* GDB Task configuration */
+        {
+            "label": "rpi-deploy-gdb",
+            "isBackground": true,
+            "problemMatcher":{
+                "base": "$gcc",
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern":  "Deploying to target",
+                    "endsPattern":  "Starting GDB Server on Target"
+                }
+            },
+            "type": "shell",
+            "command": "sh",
+            "args": [
+                "deploy_and_debug.sh",
+                "${config:PROJECT_CONFIG.TARGET_IP}",
+                "${config:PROJECT_CONFIG.EXECUTABLE}"
+            ],
+            "dependsOn": ["build"],
+        },
+
+        /* Build Task configuration*/
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "make clean; make -j$(nproc)",
+            "problemMatcher": ["$gcc"]
+        },
+    ]
+}

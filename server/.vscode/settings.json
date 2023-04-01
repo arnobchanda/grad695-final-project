@@ -1,0 +1,19 @@
+{
+    "PROJECT_CONFIG": {
+        /* Target Device */
+        "TARGET_IP":"192.168.0.100",
+
+        /* Target executable */
+        "EXECUTABLE":"dhubcore",
+
+        /* Yocto SDK Config */
+        "ARCH":"aarch64-poky-linux",
+        "OECORE_NATIVE_SYSROOT":"/opt/poky/3.1.22/sysroots/x86_64-pokysdk-linux",
+        "SDK_TARGET_SYSROOT": "/opt/poky/3.1.22/sysroots/aarch64-poky-linux",
+
+        /* Yocto SDK constants */
+        "CC_PREFIX": "${config:PROJECT_CONFIG.OECORE_NATIVE_SYSROOT}/usr/bin/${config:PROJECT_CONFIG.ARCH}/${config:PROJECT_CONFIG.ARCH}-",
+        "CC": "${config:PROJECT_CONFIG.CC_PREFIX}gcc --sysroot=${config:PROJECT_CONFIG.SDK_TARGET_SYSROOT}",
+        "CXX": "${config:PROJECT_CONFIG.CC_PREFIX}g++ --sysroot=${config:PROJECT_CONFIG.SDK_TARGET_SYSROOT}", 
+    }
+}
