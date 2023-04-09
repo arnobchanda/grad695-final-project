@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include <mqueue.h>
 #include <errno.h>
+#include <signal.h>
+#include <unistd.h>
 
 #define MAX_NUM_DATA_POINTS 10
 #define MAX_MESSAGE_SIZE 256
@@ -34,14 +36,17 @@ typedef struct client {
     int dataPointSubscribed[MAX_NUM_DATA_POINTS];
 }zClient;
 
-typedef struct message {
-    char clientQName[MAX_MESSAGE_SIZE];
-    char operation[MAX_MESSAGE_SIZE];
-    zData data;
-}zMessage;
-
 typedef struct notification {
     char notificationQName[MAX_MESSAGE_SIZE];
     char operation[MAX_MESSAGE_SIZE];
     int dataPointSubscribed[MAX_NUM_DATA_POINTS];
+    int dataPointNotif[MAX_NUM_DATA_POINTS];
 }zNotification;
+
+typedef struct message {
+    int clientId;
+    char clientQName[MAX_MESSAGE_SIZE];
+    char operation[MAX_MESSAGE_SIZE];
+    zData data;
+    zNotification notif;
+}zMessage;

@@ -26,14 +26,25 @@ typedef struct dataPoint {
 }zData;
 
 typedef struct client {
+    int clientId;
     mqd_t clientQ;
+    mqd_t notificationQ;
     char clientMsgQName[MAX_MSGQ_NAME_SIZE];
+    char notificationQName[MAX_MSGQ_NAME_SIZE];
     int dataPointSubscribed[MAX_NUM_DATA_POINTS];
 }zClient;
 
-typedef struct Message {
+typedef struct notification {
+    char notificationQName[MAX_MESSAGE_SIZE];
+    char operation[MAX_MESSAGE_SIZE];
+    int dataPointSubscribed[MAX_NUM_DATA_POINTS];
+    int dataPointNotif[MAX_NUM_DATA_POINTS];
+}zNotification;
+
+typedef struct message {
+    int clientId;
     char clientQName[MAX_MESSAGE_SIZE];
     char operation[MAX_MESSAGE_SIZE];
     zData data;
+    zNotification notif;
 }zMessage;
-

@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 #define RANDOM_VALUE_LIMIT 50
-#define SEND_INTERVAL_IN_US 1000 * 100
+#define SEND_INTERVAL_IN_US 1000 * 1000
 
 float generate_random_float()
 {
@@ -53,6 +53,7 @@ int main()
         else
         {
             printf("Got client name: %s\n", msgRecv.clientQName);
+            clientId = msgRecv.clientId;
         }
 
         //Open the client Q
@@ -73,12 +74,18 @@ int main()
     {
         // Send random stuff to DHUB
         memset(&msgSend, 0, sizeof(zMessage));
+        msgSend.clientId = clientId;
         strcpy(msgSend.clientQName, clientQName);
         snprintf(msgSend.operation, MAX_MESSAGE_SIZE, "update-request");
         msgSend.data.current = generate_random_float();
         msgSend.data.temperature = generate_random_float();
         msgSend.data.voltage = generate_random_float();
 
+        printf("Updating Server with the following data:\n");
+        printf("Current: %f\n", msgSend.data.current);
+        printf("Voltage: %f\n", msgSend.data.voltage);
+        printf("Temperature: %f\n", msgSend.data.temperature);
+        
         if (mq_send(serverQ, (char*)&msgSend, sizeof(zMessage), 0) == -1)
         {
             perror("Cannot send data to DHub Server");
@@ -90,7 +97,7 @@ int main()
 
         // Wait for the update Ack
         memset(&msgRecv, 0, sizeof(zMessage));
-        if (mq_receive(serverQ, (char*)&msgRecv, sizeof(zMessage), NULL) == -1)
+        if (mq_receive(clientQ, (char*)&msgRecv, sizeof(zMessage), NULL) == -1)
         {
             perror("Did not get update ack from DHub");
         }
@@ -107,6 +114,8 @@ int main()
                 printf("Got update ack from DHub\n");
             }
         }
+
+        
 
         usleep(SEND_INTERVAL_IN_US);
     }

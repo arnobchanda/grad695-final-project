@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${config:PROJECT_CONFIG.SDKTARGETSYSROOT}/usr/include/**"
+                "${config:PROJECT_CONFIG.SDKTARGETSYSROOT}/usr/include/**",
+                "${workspaceFolder}/include"
             ],
             "configurationProvider": "ms-vscode.makefile-tools"
         }

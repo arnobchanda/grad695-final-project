@@ -1,3 +1,1 @@
-#include "dhub_map.h"
-
-int checkOpenMessageQ();
+#include "dhub_utils.h"
