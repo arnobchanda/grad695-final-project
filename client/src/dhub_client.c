@@ -1,16 +1,4 @@
 #include "dhub_client.h"
-#include <time.h>
-#include <unistd.h>
-
-#define RANDOM_VALUE_LIMIT 50
-#define SEND_INTERVAL_IN_US 1000 * 1000
-
-float generate_random_float()
-{
-    srand(time(NULL));
-    float ret = ((float)rand()/(float)RAND_MAX) * RANDOM_VALUE_LIMIT;
-    return ret;
-}
 
 int main()
 {
@@ -36,7 +24,8 @@ int main()
     // Send register request to Server
     memset(&msgSend, 0, sizeof(zMessage));
     snprintf(msgSend.operation, MAX_MESSAGE_SIZE, "register-client");
-    if (mq_send(serverQ, (char*)&msgSend, sizeof(zMessage), 0) == -1)
+
+    if (mq_send(serverQ, (const char*)&msgSend, MSG_SIZE, 0) == -1)
     {
         perror("Cannot send register command to Server");
         exit(1);
@@ -46,7 +35,7 @@ int main()
         printf("Successfully Sent register Command\n");
         
         // Receive client Q name
-        if (mq_receive(serverQ, (char*)&msgRecv, sizeof(zMessage), NULL) == -1)
+        if (mq_receive(serverQ, (char*)&msgRecv, MSG_SIZE, NULL) == -1)
         {
             perror("Cannot receive client Q name");
         }
@@ -77,16 +66,13 @@ int main()
         msgSend.clientId = clientId;
         strcpy(msgSend.clientQName, clientQName);
         snprintf(msgSend.operation, MAX_MESSAGE_SIZE, "update-request");
-        msgSend.data.current = generate_random_float();
-        msgSend.data.temperature = generate_random_float();
-        msgSend.data.voltage = generate_random_float();
 
-        printf("Updating Server with the following data:\n");
-        printf("Current: %f\n", msgSend.data.current);
-        printf("Voltage: %f\n", msgSend.data.voltage);
-        printf("Temperature: %f\n", msgSend.data.temperature);
-        
-        if (mq_send(serverQ, (char*)&msgSend, sizeof(zMessage), 0) == -1)
+        int total_vars = read_prod_no(CONFIG_JSON);
+        printf("Total variables to produce: %d\n", total_vars);
+        generate_values(&msgSend, total_vars);
+        print_all_vars(&msgSend);
+
+        if (mq_send(serverQ, (char*)&msgSend, MSG_SIZE, 0) == -1)
         {
             perror("Cannot send data to DHub Server");
         }
@@ -97,7 +83,7 @@ int main()
 
         // Wait for the update Ack
         memset(&msgRecv, 0, sizeof(zMessage));
-        if (mq_receive(clientQ, (char*)&msgRecv, sizeof(zMessage), NULL) == -1)
+        if (mq_receive(clientQ, (char*)&msgRecv, MSG_SIZE, NULL) == -1)
         {
             perror("Did not get update ack from DHub");
         }
@@ -114,8 +100,6 @@ int main()
                 printf("Got update ack from DHub\n");
             }
         }
-
-        
 
         usleep(SEND_INTERVAL_IN_US);
     }

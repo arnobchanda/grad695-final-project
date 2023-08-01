@@ -5,6 +5,8 @@
 zClient clients[MAX_NUM_CLIENTS] = {0};
 static zData database = {0};
 
+int datapointChanged[MAX_NUM_DATA_POINTS] = {0};
+
 void disconnect_handler(int signum)
 {
     for (int i=0; i<MAX_NUM_CLIENTS; i++)
@@ -20,11 +22,24 @@ void disconnect_handler(int signum)
             printf("Closing notification Q: %s\n",clients[i].notificationQName);
         }
     }
-    printf("Closing Message Q for DHub Core\n");
+    printf("Closing Message Q for Dhub Core\n");
     mq_unlink(SERVER_Q_NAME);
 
     printf("Exiting ...\n");
     exit(0);
+}
+
+void update_database(float *database_var, float *msg_var, int index)
+{
+    if (*database_var != *msg_var)
+    {
+        *database_var = *msg_var;
+        datapointChanged[index-1] = 1;
+    }
+    else
+    {
+        datapointChanged[index-1] = 0;
+    }
 }
 
 int main()
@@ -37,7 +52,6 @@ int main()
     char clientQName[MAX_MESSAGE_SIZE];
     zMessage msgSend;
     zMessage msgRecv;
-    int datapointChanged[MAX_NUM_DATA_POINTS] = {0};
     
     serverQ = create_queue(SERVER_Q_NAME);
     if (serverQ == -1)
@@ -56,10 +70,10 @@ int main()
         clear_buffer(&msgRecv, sizeof(msgRecv));
 
         // Get a message from a client
-        receive_message_from_Q(serverQ, &msgRecv, sizeof(zMessage));
+        receive_message_from_Q(serverQ, &msgRecv, MSG_SIZE);
         printf("Received Message: %s\n",msgRecv.operation);
 
-//Check if this is a register client request
+        //Check if this is a register client request
         if(strcmp(msgRecv.operation, "register-client") == 0 )
         {
             printf("Registering Client...\n");
@@ -81,7 +95,7 @@ int main()
             msgSend.clientId = numClients;
             
             //Send Client Q name to the Client
-            send_message_on_Q(serverQ, &msgSend, sizeof(zMessage));
+            send_message_on_Q(serverQ, &msgSend, MSG_SIZE);
             
             // Update global client info
             clients[numClients].clientId = numClients;
@@ -98,48 +112,29 @@ int main()
             printf("Client registration successfull. Total Clients: %d\n", numClients);
         }
 
-// Check if this is an update request
+        // Check if this is an update request
         if( strcmp(msgRecv.operation, "update-request") == 0 )
         {
             clientId = msgRecv.clientId;
             printf("Got a data update request from Client:%d. Updating database...\n",clientId);
             
             // Update data point in memory Map
-            if ((database.current != msgRecv.data.current))
-            {
-                database.current = msgRecv.data.current;
-                datapointChanged[0] = 1;
-            }
-            else
-            {
-                datapointChanged[0] = 0;
-            }
-
-            if ((database.voltage != msgRecv.data.voltage))
-            {
-                database.voltage = msgRecv.data.voltage;
-                datapointChanged[1] = 1;
-            }
-            else
-            {
-                datapointChanged[1] = 0;
-            }
-
-            if((database.temperature != msgRecv.data.temperature))
-            {
-                database.temperature = msgRecv.data.temperature;
-                datapointChanged[2] = 1;
-            }
-            else
-            {
-                datapointChanged[2] = 0;
-            }
+            update_database(&database.var1, &msgRecv.data.var1, 1);
+            update_database(&database.var2, &msgRecv.data.var2, 2);
+            update_database(&database.var3, &msgRecv.data.var3, 3);
+            update_database(&database.var4, &msgRecv.data.var4, 4);
+            update_database(&database.var5, &msgRecv.data.var5, 5);
+            update_database(&database.var6, &msgRecv.data.var6, 6);
+            update_database(&database.var7, &msgRecv.data.var7, 7);
+            update_database(&database.var8, &msgRecv.data.var8, 8);
+            update_database(&database.var9, &msgRecv.data.var9, 9);
+            update_database(&database.var10, &msgRecv.data.var10, 10);
 
             // Send Update Ack to client
             clear_buffer(&msgSend, sizeof(msgSend));
             strcpy(msgSend.operation, "update-ack");
             printf("Sending Update Ack to client\n");
-            send_message_on_Q(clients[clientId].clientQ, &msgSend, sizeof(zMessage));
+            send_message_on_Q(clients[clientId].clientQ, &msgSend, MSG_SIZE);
 
             // Notify all clients
             clear_buffer(&msgSend, sizeof(msgSend));
@@ -156,46 +151,76 @@ int main()
                         }
                     }
 
-                    send_message_on_Q(clients[i].notificationQ, &msgSend, sizeof(zMessage));
+                    send_message_on_Q(clients[i].notificationQ, &msgSend, MSG_SIZE);
                     printf("Sent update notification to client: %d\n", i);
                 }
             } 
         }
 
-// Check if this is a get request
+        // Check if this is a get request
         if( strcmp(msgRecv.operation, "get-request") == 0 )
         {
             //Send data point to client
             clear_buffer(&msgSend, sizeof(msgSend));
-            msgSend.data.current = database.current;
-            msgSend.data.temperature = database.temperature;
-            msgSend.data.voltage = database.voltage;
-
-            send_message_on_Q(clients[msgRecv.clientId].clientQ, &msgSend, sizeof(zMessage));
+            msgSend.data.var1 = database.var1;
+            msgSend.data.var2 = database.var2;
+            msgSend.data.var3 = database.var3;
+            msgSend.data.var4 = database.var4;
+            msgSend.data.var5 = database.var5;
+            msgSend.data.var6 = database.var6;
+            msgSend.data.var7 = database.var7;
+            msgSend.data.var8 = database.var8;
+            msgSend.data.var9 = database.var9;
+            msgSend.data.var10 = database.var10;
+            
+            send_message_on_Q(clients[msgRecv.clientId].clientQ, &msgSend, MSG_SIZE);
         }
 
-// Check if this is a register-notification request
+        // Check if this is a register-notification request
         if( strcmp(msgRecv.operation, "register-notification") == 0 )
         {
             //Create notification queue
             int client = msgRecv.clientId;
-            snprintf(clients[client].notificationQName, MAX_MSGQ_NAME_SIZE, "/notif_%d", client);
-            clients[client].notificationQ = create_queue(clients[client].notificationQName);
-            printf("Notification Q opened for client: %d\n",client);
+            char exepectednotificationQName[MAX_MSGQ_NAME_SIZE];
+            snprintf(exepectednotificationQName, MAX_MSGQ_NAME_SIZE, "/notif_%d", client);
 
-            // Update Data point notifications for the client
-            for (i=0; i<MAX_NUM_DATA_POINTS; i++)
+            printf("Expected Notification Q name: %s\n", exepectednotificationQName);
+            printf("notifcation Q Name: %s\n", clients[client].notificationQName);
+            printf("Notificatoin Q Length: %ld\n", strlen(clients[client].notificationQName));
+
+            if (strlen(clients[client].notificationQName) != 8)
             {
-                clients[client].dataPointSubscribed[i] = msgRecv.notif.dataPointSubscribed[i];
-            }
+                snprintf(clients[client].notificationQName, MAX_MSGQ_NAME_SIZE, "/notif_%d", client);
+                clients[client].notificationQ = create_queue(clients[client].notificationQName);
+                printf("Notification Q opened for client: %d\n",client);
 
-            //Send notification name
-            memset(&msgSend, 0, sizeof(zMessage));
-            msgSend.clientId = client;
-            strcpy(msgSend.clientQName, clients[client].clientMsgQName);
-            strcpy(msgSend.notif.notificationQName, clients[client].notificationQName);
-            send_message_on_Q(serverQ, &msgSend, sizeof(zMessage));
-            printf("Sent notif Q name to client\n");
+                // Update Data point notifications for the client
+                for (i=0; i<MAX_NUM_DATA_POINTS; i++)
+                {
+                    clients[client].dataPointSubscribed[i] = msgRecv.notif.dataPointSubscribed[i];
+                }
+
+                //Send notification name
+                memset(&msgSend, 0, sizeof(zMessage));
+                msgSend.clientId = client;
+                strcpy(msgSend.clientQName, clients[client].clientMsgQName);
+                strcpy(msgSend.notif.notificationQName, clients[client].notificationQName);
+                send_message_on_Q(serverQ, &msgSend, MSG_SIZE);
+                printf("Sent notif Q name to client\n");
+            }
+            else
+            {
+                for (i = 0; i<MAX_NUM_DATA_POINTS; i++)
+                {
+                    printf("Notification Scheme: %d\n", msgRecv.notif.dataPointSubscribed[i]);
+                }
+                printf("\n");
+                for (i=0; i<MAX_NUM_DATA_POINTS; i++)
+                {
+                    clients[client].dataPointSubscribed[i] = msgRecv.notif.dataPointSubscribed[i];
+                }
+                printf("Updated notification scheme\n");
+            }
         }
 
         usleep(DHUB_CORE_THROTTLE);

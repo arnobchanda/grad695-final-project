@@ -8,14 +8,7 @@ void clear_buffer(void *buffer, size_t bufferSize)
 mqd_t create_queue( char* qName )
 {
     mqd_t qFileDescriptor;
-    struct mq_attr qAttributes;
-    
-    qAttributes.mq_flags = 0;
-    qAttributes.mq_maxmsg = 10;
-    qAttributes.mq_msgsize = sizeof(zMessage);
-    qAttributes.mq_curmsgs = 0;
-
-    qFileDescriptor = mq_open(qName, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, qAttributes);
+    qFileDescriptor = mq_open(qName, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, NULL);
     if (qFileDescriptor == -1)
     {
         printf("Cannot Create Message Q: %s\n", qName);

@@ -1,4 +1,5 @@
 #include "dhub_map.h"
+#define MSG_SIZE 8192
 
 void disconnect_handler(int signum);
 void clear_buffer(void *buffer, size_t bufferSize);
